@@ -1,0 +1,117 @@
+---
+sidebar: sidebar 
+permalink: trident-get-started/kubernetes-customize-deploy.html 
+keywords: deploy, trident, methods, operator, tridentctl, helm, attributes, customize, tridentorchestrator 
+summary: 'Der Trident-Operator ermöglicht es Ihnen, die Art und Weise, wie Astra Trident installiert wird, mithilfe der Attribute im anzupassen `TridentOrchestrator` Spez.' 
+---
+= Anpassung der Trident Operator-Implementierung
+:hardbreaks:
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+Der Trident-Operator ermöglicht es Ihnen, die Art und Weise, wie Astra Trident installiert wird, mithilfe der Attribute im anzupassen `TridentOrchestrator` Spez.
+
+Die Liste der Attribute finden Sie in der folgenden Tabelle:
+
+[cols="3"]
+|===
+| Parameter | Beschreibung | Standard 
+
+
+| `namespace` | Namespace für die Installation von Astra Trident in | „Standard“ 
+
+
+| `debug` | Aktivieren Sie das Debugging für Astra Trident | Falsch 
+
+
+| `IPv6` | Installieren Sie Astra Trident über IPv6 | Falsch 
+
+
+| `k8sTimeout` | Zeitüberschreitung für Kubernetes-Betrieb | 30 Sek. 
+
+
+| `silenceAutosupport` | Schicken Sie AutoSupport Bundles nicht automatisch an NetApp | Falsch 
+
+
+| `enableNodePrep` | Automatische Verwaltung der Abhängigkeiten von Workers Node (*BETA*) | Falsch 
+
+
+| `autosupportImage` | Das Container-Image für AutoSupport Telemetrie | „netapp/Trident-Autosupport:21.04.0“ 
+
+
+| `autosupportProxy` | Die Adresse/der Port eines Proxys zum Senden von AutoSupport Telemetrie | "http://proxy.example.com:8888"[] 
+
+
+| `uninstall` | Eine Flagge, die zum Deinstallieren von Astra Trident verwendet wird | Falsch 
+
+
+| `logFormat` | Astra Trident Protokollformat zur Verwendung [Text, json] | „Text“ 
+
+
+| `tridentImage` | Astra Trident-Image zu installieren | „netapp/Trident:21.04“ 
+
+
+| `imageRegistry` | Pfad zur internen Registrierung des Formats
+`<registry FQDN>[:port][/subpath]` | „K8s.gcr.io/sig-Speicherung (k8s 1.19+) oder quay.io/k8scsi“ 
+
+
+| `kubeletDir` | Pfad zum kubelet-Verzeichnis auf dem Host | „/var/lib/kubelet“ 
+
+
+| `wipeout` | Eine Liste mit zu löschenden Ressourcen, um Astra Trident vollständig zu entfernen |  
+
+
+| `imagePullSecrets` | Secrets, um Bilder aus einer internen Registrierung zu ziehen |  
+
+
+| `controllerPluginNodeSelector` | Zusätzliche Node-Selektoren für Pods mit dem Trident Controller CSI Plugin Entspricht dem gleichen Format wie pod.spec.nodeSelector. | Kein Standard; optional 
+
+
+| `controllerPluginTolerations` | Überschreibungen von Verträgungen für Pods mit dem Trident Controller CSI-Plug-in Entspricht dem gleichen Format wie pod.spec.tolerations. | Kein Standard; optional 
+
+
+| `nodePluginNodeSelector` | Zusätzliche Node-Selektoren für Pods, auf denen das Trident Node CSI Plugin ausgeführt wird. Entspricht dem gleichen Format wie pod.spec.nodeSelector. | Kein Standard; optional 
+
+
+| `nodePluginTolerations` | Überschreibungen von Verträgungen für Pods mit dem Trident Node CSI Plugin Entspricht dem gleichen Format wie pod.spec.tolerations. | Kein Standard; optional 
+|===
+
+IMPORTANT: `spec.namespace` Ist in angegeben `TridentOrchestrator` Um zu kennzeichnen, in welchem Namespace Astra Trident installiert ist. Dieser Parameter *kann nicht aktualisiert werden, nachdem Astra Trident installiert wurde*. Der Versuch, dies zu tun, verursacht den Status von `TridentOrchestrator` Zu ändern `Failed`. Astra Trident ist nicht für die Migration auf Namespaces vorgesehen.
+
+
+TIP: Weitere Informationen zum Formatieren von Pod-Parametern finden Sie unter link:https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/["Pods werden Nodes zugewiesen"^].
+
+Sie können die oben genannten Attribute beim Definieren verwenden `TridentOrchestrator` Um die Installation anzupassen. Hier ein Beispiel:
+
+[listing]
+----
+cat deploy/crds/tridentorchestrator_cr_imagepullsecrets.yaml
+apiVersion: trident.netapp.io/v1
+kind: TridentOrchestrator
+metadata:
+  name: trident
+spec:
+  debug: true
+  namespace: trident
+  imagePullSecrets:
+  - thisisasecret
+----
+Das folgende Beispiel zeigt, wie Trident mit Node-Selektoren implementiert werden kann:
+
+[listing]
+----
+apiVersion: trident.netapp.io/v1
+kind: TridentOrchestrator
+metadata:
+  name: trident
+spec:
+  debug: true
+  namespace: trident
+  controllerPluginNodeSelector:
+    nodetype: master
+  nodePluginNodeSelector:
+    storage: netapp
+----
+Wenn Sie die Installation über das hinaus anpassen möchten `TridentOrchestrator` Argumente erlauben, sollten Sie erwägen, zu verwenden `tridentctl` So generieren Sie benutzerdefinierte YAML-Manifeste, die Sie nach Bedarf ändern können.

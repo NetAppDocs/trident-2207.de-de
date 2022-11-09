@@ -1,0 +1,327 @@
+---
+sidebar: sidebar 
+permalink: trident-use/anf.html 
+keywords: trident backend, azure netapp files 
+summary: Erfahren Sie, wie Sie Azure NetApp Files mit den bereitgestellten Beispielkonfigurationen als Backend für Ihre Trident-Installation konfigurieren. 
+---
+= Konfigurieren Sie ein Azure NetApp Files-Backend
+:hardbreaks:
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+Erfahren Sie, wie Sie Azure NetApp Files (ANF) mit den angegebenen Beispielkonfigurationen als Backend für Ihre Astra Trident Installation konfigurieren.
+
+
+NOTE: Der Azure NetApp Files-Service unterstützt keine Volumes mit weniger als 100 GB. Astra Trident erstellt automatisch 100-GB-Volumes, wenn ein kleineres Volume benötigt wird.
+
+Um ein zu konfigurieren und zu verwenden https://azure.microsoft.com/en-us/services/netapp/["Azure NetApp Dateien"^] Back-End, Sie benötigen Folgendes:
+
+* `subscriptionID` Über ein Azure Abonnement mit aktiviertem Azure NetApp Files.
+* `tenantID`, `clientID`, und `clientSecret` Von einem https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal["App-Registrierung"^] In Azure Active Directory mit ausreichenden Berechtigungen für den Azure NetApp Files-Service. Die App-Registrierung sollte das verwenden `Owner` Oder `Contributor` Rolle, die von Azure vordefiniert ist.
++
+
+TIP: Weitere Informationen zu den integrierten Azure-Rollen finden Sie im https://docs.microsoft.com/en-us/azure/role-based-access-control/built-in-roles["Azure-Dokumentation"^].
+
+* Im Azure `location` Das enthält mindestens eine https://docs.microsoft.com/en-us/azure/azure-netapp-files/azure-netapp-files-delegate-subnet["Delegiertes Subnetz"^]. Ab Trident 22.01 finden Sie das `location` Parameter ist ein erforderliches Feld auf der obersten Ebene der Backend-Konfigurationsdatei. In virtuellen Pools angegebene Standortwerte werden ignoriert.
+* Wenn Sie Azure NetApp Files zum ersten Mal oder an einem neuen Standort verwenden, ist eine Erstkonfiguration erforderlich. Siehe https://docs.microsoft.com/en-us/azure/azure-netapp-files/azure-netapp-files-quickstart-set-up-account-create-volumes["quickstart-Anleitung"^].
+
+
+Basierend auf der Back-End-Konfiguration (Subnetz, virtuelles Netzwerk, Service Level und Standort) erstellt Trident ANF Volumes auf Kapazitäts-Pools, die am angeforderten Standort verfügbar sind und dem angeforderten Service Level und Subnetz entsprechen.
+
+
+NOTE: HINWEIS: Astra Trident unterstützt keine manuellen QoS-Kapazitäts-Pools.
+
+
+
+== Back-End-Konfigurationsoptionen
+
+Die Back-End-Konfigurationsoptionen finden Sie in der folgenden Tabelle:
+
+[cols="3"]
+|===
+| Parameter | Beschreibung | Standard 
+
+
+| `version` |  | Immer 1 
+
+
+| `storageDriverName` | Name des Speichertreibers | „azure-netapp-Files“ 
+
+
+| `backendName` | Benutzerdefinierter Name oder das Storage-Backend | Treibername + „_“ + zufällige Zeichen 
+
+
+| `subscriptionID` | Die Abonnement-ID Ihres Azure Abonnements |  
+
+
+| `tenantID` | Die Mandanten-ID aus einer App-Registrierung |  
+
+
+| `clientID` | Die Client-ID aus einer App-Registrierung |  
+
+
+| `clientSecret` | Der Client-Schlüssel aus einer App-Registrierung |  
+
+
+| `serviceLevel` | Einer von `Standard`, `Premium`, Oder `Ultra` | „“ (zufällig) 
+
+
+| `location` | Name des Azure Speicherorts, an dem die neuen Volumes erstellt werden |  
+
+
+| `resourceGroups` | Liste der Ressourcengruppen zum Filtern ermittelter Ressourcen | „[]“ (kein Filter) 
+
+
+| `netappAccounts` | Liste von NetApp Accounts zur Filterung erkannter Ressourcen | „[]“ (kein Filter) 
+
+
+| `capacityPools` | Liste der Kapazitäts-Pools zur Filterung erkannter Ressourcen | „[]“ (kein Filter, zufällig) 
+
+
+| `virtualNetwork` | Name eines virtuellen Netzwerks mit einem delegierten Subnetz | „“ 
+
+
+| `subnet` | Name eines an delegierten Subnetzes `Microsoft.Netapp/volumes` | „“ 
+
+
+| `networkFeatures` | Eventuell Set von vnet-Funktionen für ein Volumen `Basic` Oder `Standard` | „“ 
+
+
+| `nfsMountOptions` | Engmaschige Kontrolle der NFS-Mount-Optionen | „Nfsvers=3“ 
+
+
+| `limitVolumeSize` | Bereitstellung fehlgeschlagen, wenn die angeforderte Volume-Größe über diesem Wert liegt | „“ (nicht standardmäßig durchgesetzt) 
+
+
+| `debugTraceFlags` | Fehler-Flags bei der Fehlerbehebung beheben. Beispiel: `\{"api": false, "method": true, "discovery": true}`. Verwenden Sie dies nur, wenn Sie Fehler beheben und einen detaillierten Log Dump benötigen. | Null 
+|===
+
+WARNING: Wenn beim Versuch, ein PVC zu erstellen, ein Fehler „Keine Kapazitätspools gefunden“ auftritt, ist es wahrscheinlich, dass Ihre App-Registrierung nicht über die erforderlichen Berechtigungen und Ressourcen (Subnetz, virtuelles Netzwerk, Kapazitäts-Pool) verbunden ist. Astra Trident protokolliert die Azure Ressourcen, die es entdeckt hat, wenn das Backend erstellt wird, wenn Debug aktiviert ist. Prüfen Sie, ob eine geeignete Rolle verwendet wird.
+
+
+NOTE: Wenn Sie Volumes mit NFS Version 4.1 mounten möchten, können Sie die Volumes mit einbeziehen ``nfsvers=4`` Wählen Sie in der Liste mit durch Komma getrennten Mount-Optionen NFS v4.1 aus. Alle in einer Speicherklasse festgelegten Mount-Optionen überschreiben die in einer Backend-Konfigurationsdatei festgelegten Mount-Optionen.
+
+
+NOTE: Der https://docs.microsoft.com/en-us/azure/azure-netapp-files/configure-network-features["Netzwerkfunktionen"^] Funktionen sind in der Regel nicht in allen Regionen verfügbar und müssen möglicherweise in einem Abonnement aktiviert werden. Angeben des `networkFeatures` Die Konfigurationsoption, wenn die Funktion nicht aktiviert ist, führt zum Fehlschlagen der Volume-Bereitstellung in Trident.
+
+Die Werte für `resourceGroups`, `netappAccounts`, `capacityPools`, `virtualNetwork`, und `subnet` Kann mit kurzen oder vollqualifizierten Namen angegeben werden. Kurze Namen können mehrere Ressourcen mit demselben Namen entsprechen. In den meisten Fällen wird daher die Verwendung vollständig qualifizierter Namen empfohlen. Der `resourceGroups`, `netappAccounts`, und `capacityPools` Werte sind Filter, die die ermittelten Ressourcen auf die in diesem Storage-Back-End verfügbaren Ressourcen beschränken und in beliebiger Kombination angegeben werden können. Die vollqualifizierten Namen haben das folgende Format:
+
+[cols="2"]
+|===
+| Typ | Formatieren 
+
+
+| Ressourcengruppe | <Ressourcengruppe> 
+
+
+| NetApp Konto | <Resource Group>/<netapp Account> 
+
+
+| Kapazitäts-Pool | <Resource Group>/<netapp Account>/<Capacity Pool> 
+
+
+| Virtuelles Netzwerk | <Ressourcengruppe>/<virtuelles Netzwerk> 
+
+
+| Subnetz | <Ressourcengruppe>/<virtuelles Netzwerk>/<Subnetz> 
+|===
+Sie können festlegen, wie jedes Volume standardmäßig bereitgestellt wird, indem Sie die folgenden Optionen in einem speziellen Abschnitt der Konfigurationsdatei angeben. Sehen Sie sich die Konfigurationsbeispiele unten an.
+
+[cols=",,"]
+|===
+| Parameter | Beschreibung | Standard 
+
+
+| `exportRule` | Die Exportregel(n) für neue Volumes | „0.0.0.0/0“ 
+
+
+| `snapshotDir` | Steuert die Sichtbarkeit des .Snapshot-Verzeichnisses | „Falsch“ 
+
+
+| `size` | Die Standardgröße der neuen Volumes | „100 GB“ 
+
+
+| `unixPermissions` | unix-Berechtigungen für neue Volumes (4 Oktal-Ziffern) | „“ (Vorschau-Funktion, erfordert Whitelisting im Abonnement) 
+|===
+Der `exportRule` Wert muss eine kommagetrennte Liste beliebiger Kombinationen von IPv4-Adressen oder IPv4-Subnetzen in CIDR-Notation sein.
+
+
+NOTE: Astra Trident kopiert bei allen auf einem ANF-Backend erstellten Volumes alle auf einem Storage-Pool vorhandenen Labels während der Bereitstellung auf das Storage-Volume. Storage-Administratoren können Labels pro Storage-Pool definieren und alle Volumes gruppieren, die in einem Storage-Pool erstellt wurden. Dies bietet eine praktische Möglichkeit, Volumes anhand einer Reihe anpassbarer Etiketten, die in der Backend-Konfiguration bereitgestellt werden, zu unterscheiden.
+
+
+
+== Beispiel 1: Minimale Konfiguration
+
+Dies ist die absolute minimale Backend-Konfiguration. Mit dieser Konfiguration erkennt Astra Trident alle Ihre NetApp Konten, Kapazitäts-Pools und Subnetze, die an ANF am konfigurierten Speicherort delegiert wurden, und setzt zufällig neue Volumes auf einen dieser Pools und Subnetze.
+
+Diese Konfiguration eignet sich ideal, wenn Sie gerade mit ANF beginnen und die Dinge ausprobieren. In der Praxis möchten Sie jedoch zusätzliche Informationen für die Volumes bereitstellen, die Sie bereitstellen.
+
+[listing]
+----
+{
+    "version": 1,
+    "storageDriverName": "azure-netapp-files",
+    "subscriptionID": "9f87c765-4774-fake-ae98-a721add45451",
+    "tenantID": "68e4f836-edc1-fake-bff9-b2d865ee56cf",
+    "clientID": "dd043f63-bf8e-fake-8076-8de91e5713aa",
+    "clientSecret": "SECRET",
+    "location": "eastus"
+}
+----
+
+
+== Beispiel 2: Spezifische Service Level-Konfiguration mit Kapazitätspool-Filtern
+
+Bei dieser Back-End-Konfiguration werden Volumes in Azure platziert `eastus` Standort in einem `Ultra` Kapazitäts-Pool: Astra Trident erkennt automatisch alle an ANF delegierten Subnetze und legt ein neues Volume zufällig auf einen davon ab.
+
+[listing]
+----
+    {
+        "version": 1,
+        "storageDriverName": "azure-netapp-files",
+        "subscriptionID": "9f87c765-4774-fake-ae98-a721add45451",
+        "tenantID": "68e4f836-edc1-fake-bff9-b2d865ee56cf",
+        "clientID": "dd043f63-bf8e-fake-8076-8de91e5713aa",
+        "clientSecret": "SECRET",
+        "location": "eastus",
+        "serviceLevel": "Ultra",
+        "capacityPools": [
+            "application-group-1/account-1/ultra-1",
+            "application-group-1/account-1/ultra-2"
+],
+    }
+----
+
+
+== Beispiel 3: Erweiterte Konfiguration
+
+Diese Back-End-Konfiguration reduziert den Umfang der Volume-Platzierung auf ein einzelnes Subnetz und ändert auch einige Standardwerte für die Volume-Bereitstellung.
+
+[listing]
+----
+    {
+        "version": 1,
+        "storageDriverName": "azure-netapp-files",
+        "subscriptionID": "9f87c765-4774-fake-ae98-a721add45451",
+        "tenantID": "68e4f836-edc1-fake-bff9-b2d865ee56cf",
+        "clientID": "dd043f63-bf8e-fake-8076-8de91e5713aa",
+        "clientSecret": "SECRET",
+        "location": "eastus",
+        "serviceLevel": "Ultra",
+        "capacityPools": [
+            "application-group-1/account-1/ultra-1",
+            "application-group-1/account-1/ultra-2"
+],
+        "virtualNetwork": "my-virtual-network",
+        "subnet": "my-subnet",
+        "networkFeatures": "Standard",
+        "nfsMountOptions": "vers=3,proto=tcp,timeo=600",
+        "limitVolumeSize": "500Gi",
+        "defaults": {
+            "exportRule": "10.0.0.0/24,10.0.1.0/24,10.0.2.100",
+            "snapshotDir": "true",
+            "size": "200Gi",
+            "unixPermissions": "0777"
+        }
+    }
+----
+
+
+== Beispiel 4: Konfiguration des virtuellen Speicherpools
+
+Diese Back-End-Konfiguration definiert mehrere Storage-Pools in einer einzelnen Datei. Dies ist nützlich, wenn Sie über mehrere Kapazitäts-Pools verfügen, die unterschiedliche Service-Level unterstützen, und Sie Storage-Klassen in Kubernetes erstellen möchten, die diese unterstützen.
+
+[listing]
+----
+    {
+        "version": 1,
+        "storageDriverName": "azure-netapp-files",
+        "subscriptionID": "9f87c765-4774-fake-ae98-a721add45451",
+        "tenantID": "68e4f836-edc1-fake-bff9-b2d865ee56cf",
+        "clientID": "dd043f63-bf8e-fake-8076-8de91e5713aa",
+        "clientSecret": "SECRET",
+        "location": "eastus",
+        "resourceGroups": ["application-group-1"],
+        "networkFeatures": "Basic",
+        "nfsMountOptions": "vers=3,proto=tcp,timeo=600",
+        "labels": {
+            "cloud": "azure"
+        },
+        "location": "eastus",
+
+        "storage": [
+            {
+                "labels": {
+                    "performance": "gold"
+                },
+                "serviceLevel": "Ultra",
+                "capacityPools": ["ultra-1", "ultra-2"],
+                "networkFeatures": "Standard"
+            },
+            {
+                "labels": {
+                    "performance": "silver"
+                },
+                "serviceLevel": "Premium",
+                "capacityPools": ["premium-1"]
+            },
+            {
+                "labels": {
+                    "performance": "bronze"
+                },
+                "serviceLevel": "Standard",
+                "capacityPools": ["standard-1", "standard-2"]
+            }
+        ]
+    }
+----
+Im Folgenden `StorageClass` Definitionen beziehen sich auf die oben genannten Speicherpools. Durch Verwendung des `parameters.selector` Feld können Sie für jedes Feld angeben `StorageClass` Der virtuelle Pool, der zum Hosten eines Volumes genutzt wird. Im Volume werden die Aspekte definiert, die im ausgewählten Pool definiert sind.
+
+[listing]
+----
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gold
+provisioner: csi.trident.netapp.io
+parameters:
+  selector: "performance=gold"
+allowVolumeExpansion: true
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: silver
+provisioner: csi.trident.netapp.io
+parameters:
+  selector: "performance=silver"
+allowVolumeExpansion: true
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: bronze
+provisioner: csi.trident.netapp.io
+parameters:
+  selector: "performance=bronze"
+allowVolumeExpansion: true
+----
+
+
+== Was kommt als Nächstes?
+
+Führen Sie nach dem Erstellen der Back-End-Konfigurationsdatei den folgenden Befehl aus:
+
+[listing]
+----
+tridentctl create backend -f <backend-file>
+----
+Wenn die Backend-Erstellung fehlschlägt, ist mit der Back-End-Konfiguration ein Fehler aufgetreten. Sie können die Protokolle zur Bestimmung der Ursache anzeigen, indem Sie den folgenden Befehl ausführen:
+
+[listing]
+----
+tridentctl logs
+----
+Nachdem Sie das Problem mit der Konfigurationsdatei identifiziert und korrigiert haben, können Sie den Befehl „Erstellen“ erneut ausführen.

@@ -15,7 +15,7 @@ Informieren Sie sich über Datensicherungs- und Recovery-Optionen, die die Stora
 
 
 
-== Erstellen Sie ein Backup der etcten Clusterdaten
+== Sichern Sie die `etcd` Cluster-Daten
 
 Astra Trident speichert die Metadaten in den Kubernetes Clustern `etcd` Datenbank: Sichern Sie regelmäßig den `etcd` Cluster-Daten sind wichtig, um Kubernetes-Cluster unter Disaster-Szenarien wiederherzustellen.
 

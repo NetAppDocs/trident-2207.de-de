@@ -79,7 +79,7 @@ Wenn Sie andere Applikationen, die Sie mit Helm managen, ab Astra Trident 21.01 
 
 
 
-=== Wann sollte ich tridenctl verwenden?
+=== Wann sollte ich verwenden `tridenctl`?
 
 Wenn Sie eine vorhandene Implementierung haben, die aktualisiert werden muss, oder wenn Sie Ihre Implementierung stark anpassen möchten, sollten Sie sich unbedingt die Lösung verwenden link:kubernetes-deploy-tridentctl.html["Tridentctl"^]. Dies ist die herkömmliche Methode der Implementierung von Astra Trident.
 

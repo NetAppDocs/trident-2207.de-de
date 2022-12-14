@@ -20,6 +20,7 @@ Sie können Astra Trident über den Trident-Operator implementieren. Es gibt zwe
 
 TIP: Wenn Sie sich nicht bereits mit dem vertraut gemacht haben link:../trident-concepts/intro.html["Grundkonzepte"^], Ist jetzt eine tolle Zeit, um das zu tun.
 
+.Was Sie benötigen
 Bei der Implementierung von Astra Trident sollten die folgenden Voraussetzungen erfüllt sein:
 
 * Sie haben volle Berechtigungen für einen unterstützten Kubernetes-Cluster mit Kubernetes 1.19 - 1.24.
@@ -39,6 +40,7 @@ Hast du das alles? Sehr Gut! Fangen wir an.
 
 Führen Sie die aufgeführten Schritte zur Implementierung des Trident-Bedieners mithilfe von Helm durch.
 
+.Was Sie benötigen
 Zusätzlich zu den oben aufgeführten Voraussetzungen benötigen Sie zur Implementierung des Trident-Operators mithilfe von Helm folgende Voraussetzungen:
 
 * Kubernetes 1.19 - 1.24
@@ -199,7 +201,7 @@ IMPORTANT: Es sollte nur eine Instanz* des Operators in einem Kubernetes-Cluster
 
 
 
-=== Schritt 3: TridentOrchestrator erstellen und Trident installieren
+=== Schritt 3: Erstellen `TridentOrchestrator` Und Trident installieren
 
 Sie können Astra Trident nun mit dem Operator installieren! Hierfür muss erstellt werden `TridentOrchestrator`. Das Trident Installationsprogramm enthält Beispieldefinitionen für die Erstellung `TridentOrchestrator`. Dies startet eine Installation im `trident` Namespace.
 

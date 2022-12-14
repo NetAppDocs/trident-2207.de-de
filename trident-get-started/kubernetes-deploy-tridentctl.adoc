@@ -19,6 +19,7 @@ TIP: Wenn Sie sich nicht bereits mit dem vertraut gemacht haben link:../trident-
 
 TIP: Informationen zur Anpassung Ihrer Implementierung finden Sie unter link:kubernetes-customize-deploy-tridentctl.html["Hier"^].
 
+.Was Sie benötigen
 Bei der Implementierung von Astra Trident sollten die folgenden Voraussetzungen erfüllt sein:
 
 * Sie erhalten volle Berechtigungen für ein unterstütztes Kubernetes-Cluster.
